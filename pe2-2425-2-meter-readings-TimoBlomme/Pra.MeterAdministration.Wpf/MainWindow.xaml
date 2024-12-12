@@ -1,0 +1,34 @@
+﻿<Window x:Class="Pra.MeterAdministration.Wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Meterstand App" Height="510" Width="800">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Column: Form -->
+        <StackPanel Grid.Column="0" Margin="10,10,10,10">
+            <TextBlock Text="Choose Type Meter:" FontWeight="Bold" />
+            <ComboBox Name="cmbMeterType" SelectionChanged="CmbMeterType_SelectionChanged"  />
+
+            <TextBlock Text="Meter ID:" Margin="0,10,0,0" />
+            <TextBox Name="txtMeterId" />
+
+            <TextBlock Text="Datum:" Margin="0,10,0,0" />
+            <DatePicker Name="dteDate" />
+
+            <!-- Dynamic Input Fields -->
+            <StackPanel x:Name="stpControls" Margin="0,10,0,0" Height="247">
+               
+            </StackPanel>
+            <Button Name="btnAdd" Content="Add meter reading" Click="BtnAdd_Click" />
+
+            <!-- Add Button -->
+        </StackPanel>
+
+        <!-- Right Column: Overview -->
+        <ListBox Grid.Column="1" Name="lstMeterReadings"  />
+    </Grid>
+</Window>
