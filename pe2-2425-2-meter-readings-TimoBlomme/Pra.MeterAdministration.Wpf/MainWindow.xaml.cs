@@ -127,7 +127,8 @@ namespace Pra.MeterAdministration.Wpf
 
                 if (selectedReading != null)
                 {
-                    meterAdmin.RemoveMeterReading(selectedReading.MeterId);
+                    meterAdmin.RemoveMeterReading(selectedReading);
+                    MessageBox.Show("You have succesfully changed the meterReading", "MeterReading changed", MessageBoxButton.OK);
                 }
                 
                 foreach (MeterReading existingReading in meterAdmin.MeterReadings)
@@ -147,8 +148,21 @@ namespace Pra.MeterAdministration.Wpf
                 };
 
                 meterAdmin.AddMeterReading(newReading);
+
+                if (selectedReading == null)
+                {
+                    int count = meterAdmin.GetMetersCount();
+                    if (count < 5)
+                    {
+                        MessageBox.Show($"You have added a reading, you now have {count} readings", "Reading added", MessageBoxButton.OK);
+                    }
+                }
+
+
                 RefreshMeterReadingsList();
                 ClearInputFields();
+
+                
             }
             catch (Exception ex)
             {
@@ -260,6 +274,25 @@ namespace Pra.MeterAdministration.Wpf
                         }
                     }
                 }
+            }
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            switch (e.Key)
+            { 
+                case Key.Escape:
+                    lstMeterReadings.UnselectAll();
+                    ClearInputFields();
+                    break;
+
+                case Key.Delete:
+                    meterAdmin.RemoveMeterReading(selectedReading);
+                    int count = meterAdmin.GetMetersCount();
+                    MessageBox.Show($"You have deleted 1 reading, you now have {count} readings", "Reading deleted", MessageBoxButton.OK);
+                    RefreshMeterReadingsList();
+                    ClearInputFields();
+                    break;
             }
         }
     }

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Pra.MeterAdministration.Wpf.Classes
 {
     public class MeterAdmin
     {
-        private readonly List<MeterReading> meterReadings;
+        private List<MeterReading> meterReadings;
 
         public MeterAdmin()
         {
@@ -20,22 +21,24 @@ namespace Pra.MeterAdministration.Wpf.Classes
             get { return meterReadings.AsReadOnly(); }
         }
 
+        public int GetMetersCount()
+        {
+            return meterReadings.Count;
+        }
+
         public void AddMeterReading(MeterReading reading)
         {
+            if (meterReadings.Count > 4)
+            {
+                MessageBox.Show("you already have 5 Readings, you cannot add more readings", "Max amount of readings", MessageBoxButton.OK);
+                return;
+            }
             meterReadings.Add(reading);
         }
 
-        public void RemoveMeterReading(int meterId)
+        public void RemoveMeterReading(MeterReading reading)
         {
-            MeterReading reading = meterReadings.FirstOrDefault(r => r.MeterId == meterId);
-            if (reading != null)
-            {
-                meterReadings.Remove(reading);
-            }
-            else
-            {
-                throw new KeyNotFoundException($"No meter reading found with ID: {meterId}");
-            }
+            meterReadings.Remove(reading);
         }
 
         public void UpdateMeterReading(int meterId, Dictionary<string, string> updatedValues, DateTime updatedDate)
