@@ -29,6 +29,6 @@
         </StackPanel>
 
         <!-- Right Column: Overview -->
-        <ListBox Grid.Column="1" Name="lstMeterReadings"  />
+        <ListBox Grid.Column="1" Name="lstMeterReadings" SelectionChanged="LstMeterReadings_SelectionChanged"  />
     </Grid>
 </Window>

@@ -22,11 +22,6 @@ namespace Pra.MeterAdministration.Wpf.Classes
 
         public void AddMeterReading(MeterReading reading)
         {
-            if (meterReadings.Count >= 5)
-            {
-                throw new InvalidOperationException("Cannot add more than 5 meter readings.");
-            }
-
             meterReadings.Add(reading);
         }
 
@@ -61,6 +56,8 @@ namespace Pra.MeterAdministration.Wpf.Classes
         {
             return meterReadings.Where(r => r.MeterType == meterType).ToList();
         }
+
+
     }
 }
 

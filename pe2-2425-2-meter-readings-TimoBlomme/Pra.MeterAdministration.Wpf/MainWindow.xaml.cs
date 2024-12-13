@@ -1,5 +1,6 @@
 ﻿using Pra.MeterAdministration.Wpf.Classes;
 using System;
+using System.Diagnostics.Metrics;
 using System.Linq.Expressions;
 using System.Text;
 using System.Windows;
@@ -18,16 +19,50 @@ namespace Pra.MeterAdministration.Wpf
     public partial class MainWindow : Window
     {
         private MeterAdmin meterAdmin = new MeterAdmin();
+        private MeterReading selectedReading = null;
 
         public MainWindow()
         {
             InitializeComponent();
             InitializeMeterTypeComboBox();
+            InitializeSeedData();
+            lstMeterReadings.SelectionChanged += LstMeterReadings_SelectionChanged;
         }
 
         private void InitializeMeterTypeComboBox()
         {
             cmbMeterType.ItemsSource = Enum.GetValues(typeof(MeterType));
+        }
+
+        private void InitializeSeedData()
+        {
+            MeterReading airQualityReading = new MeterReading
+            {
+                MeterId = 1,
+                Date = DateTime.Now,
+                MeterType = MeterType.AirQuality.ToString(),
+                Values = new Dictionary<string, string>
+                {
+                    { "txtCO2", "400" },
+                    { "txtPM25", "10" }
+                }
+            };
+
+            MeterReading waterReading = new MeterReading
+            {
+                MeterId = 2,
+                Date = DateTime.Now,
+                MeterType = MeterType.Water.ToString(),
+                Values = new Dictionary<string, string>
+                {
+                    { "txtWaterConsumption", "150" }
+                }
+            };
+
+            meterAdmin.AddMeterReading(airQualityReading);
+            meterAdmin.AddMeterReading(waterReading);
+
+            RefreshMeterReadingsList();
         }
 
         private void CmbMeterType_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -81,14 +116,6 @@ namespace Pra.MeterAdministration.Wpf
                     }
                 }
 
-                foreach (MeterReading existingReading in meterAdmin.MeterReadings)
-                {
-                    if (existingReading.MeterId == meterId)
-                    {
-                        throw new Exception("A meter reading with this ID already exists.");
-                    }
-                }
-
                 foreach (ComboBox comboBox in stpControls.Children.OfType<ComboBox>())
                 {
                     values[comboBox.Name] = comboBox.SelectedItem?.ToString();
@@ -98,7 +125,20 @@ namespace Pra.MeterAdministration.Wpf
                     }
                 }
 
-                MeterReading reading = new MeterReading
+                if (selectedReading != null)
+                {
+                    meterAdmin.RemoveMeterReading(selectedReading.MeterId);
+                }
+                
+                foreach (MeterReading existingReading in meterAdmin.MeterReadings)
+                {
+                    if (existingReading.MeterId == meterId)
+                    {
+                        throw new Exception("A meter reading with this ID already exists.");
+                    }
+                }
+                
+                MeterReading newReading = new MeterReading
                 {
                     MeterId = meterId,
                     Date = dteDate.SelectedDate.Value,
@@ -106,13 +146,27 @@ namespace Pra.MeterAdministration.Wpf
                     Values = values
                 };
 
-                meterAdmin.AddMeterReading(reading);
+                meterAdmin.AddMeterReading(newReading);
                 RefreshMeterReadingsList();
+                ClearInputFields();
             }
             catch (Exception ex)
             {
+                if (selectedReading != null)
+                {
+                    meterAdmin.AddMeterReading(selectedReading);
+                }
+
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void ClearInputFields()
+        {
+            txtMeterId.Text = string.Empty;
+            dteDate.SelectedDate = null;
+            cmbMeterType.SelectedItem = null;
+            stpControls.Children.Clear();
         }
 
         private void RefreshMeterReadingsList()
@@ -172,6 +226,41 @@ namespace Pra.MeterAdministration.Wpf
             };
             stpControls.Children.Add(textBlock);
             stpControls.Children.Add(comboBox);
+        }
+
+        private void LstMeterReadings_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (lstMeterReadings.SelectedItem != null)
+            {
+                string selectedDisplay = lstMeterReadings.SelectedItem.ToString();
+                selectedReading = meterAdmin.MeterReadings
+                    .FirstOrDefault(r => selectedDisplay.Contains($"Meter ID: {r.MeterId}"));
+
+                if (selectedReading != null)
+                {
+                    txtMeterId.Text = selectedReading.MeterId.ToString();
+                    dteDate.SelectedDate = selectedReading.Date;
+                    cmbMeterType.SelectedItem = Enum.Parse(typeof(MeterType), selectedReading.MeterType);
+
+                    CmbMeterType_SelectionChanged(null, null);
+
+                    foreach (var control in stpControls.Children.OfType<TextBox>())
+                    {
+                        if (selectedReading.Values.TryGetValue(control.Name, out string value))
+                        {
+                            control.Text = value;
+                        }
+                    }
+
+                    foreach (var control in stpControls.Children.OfType<ComboBox>())
+                    {
+                        if (selectedReading.Values.TryGetValue(control.Name, out string value))
+                        {
+                            control.SelectedItem = value;
+                        }
+                    }
+                }
+            }
         }
     }
 }
