@@ -13,7 +13,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-
 namespace Pra.MeterAdministration.Wpf
 {
     public partial class MainWindow : Window
@@ -26,6 +25,7 @@ namespace Pra.MeterAdministration.Wpf
             InitializeComponent();
             InitializeMeterTypeComboBox();
             InitializeSeedData();
+            InitializeUI();
             lstMeterReadings.SelectionChanged += LstMeterReadings_SelectionChanged;
         }
 
@@ -34,13 +34,20 @@ namespace Pra.MeterAdministration.Wpf
             cmbMeterType.ItemsSource = Enum.GetValues(typeof(MeterType));
         }
 
+        private void InitializeUI()
+        {
+            cmbMeterType.ItemsSource = Enum.GetValues(typeof(MeterType)).Cast<MeterType>().ToList();
+        }
+
         private void InitializeSeedData()
         {
+            
+
             MeterReading airQualityReading = new MeterReading
             {
                 MeterId = 1,
                 Date = DateTime.Now,
-                MeterType = MeterType.AirQuality.ToString(),
+                MeterType = MeterType.AirQuality,
                 Values = new Dictionary<string, string>
                 {
                     { "txtCO2", "400" },
@@ -52,7 +59,7 @@ namespace Pra.MeterAdministration.Wpf
             {
                 MeterId = 2,
                 Date = DateTime.Now,
-                MeterType = MeterType.Water.ToString(),
+                MeterType = MeterType.Water,
                 Values = new Dictionary<string, string>
                 {
                     { "txtWaterConsumption", "150" }
@@ -97,12 +104,18 @@ namespace Pra.MeterAdministration.Wpf
 
             try
             {
+                if (meterAdmin.GetMetersCount() >= 5)
+                {
+                    throw new Exception("Maximum of 5 meter readings reached.");
+                }
+
+                MeterType meterType = (MeterType)cmbMeterType.SelectedItem;
                 int meterId;
+
                 if (!int.TryParse(txtMeterId.Text, out meterId))
                 {
                     throw new Exception("Invalid meter ID.");
                 }
-
                 if (!dteDate.SelectedDate.HasValue)
                 {
                     throw new Exception("Select a valid date.");
@@ -132,7 +145,14 @@ namespace Pra.MeterAdministration.Wpf
                     meterAdmin.RemoveMeterReading(selectedReading);
                     MessageBox.Show("You have succesfully changed the meterReading", "MeterReading changed", MessageBoxButton.OK);
                 }
-                
+
+
+                if (meterAdmin.MeterReadings.Any(r => r.MeterId == meterId && r != selectedReading))
+                {
+                    throw new Exception("A meter reading with this ID already exists.");
+                }
+
+                /*
                 foreach (MeterReading existingReading in meterAdmin.MeterReadings)
                 {
                     if (existingReading.MeterId == meterId)
@@ -140,7 +160,8 @@ namespace Pra.MeterAdministration.Wpf
                         throw new Exception("A meter reading with this ID already exists.");
                     }
                 }
-                 
+                */
+                
                 if (cmbMeterType.SelectedItem == null)
                 {
                     throw new Exception("Please select a meter type.");
@@ -150,7 +171,7 @@ namespace Pra.MeterAdministration.Wpf
                 {
                     MeterId = meterId,
                     Date = dteDate.SelectedDate.Value,
-                    MeterType = cmbMeterType.SelectedItem.ToString(),
+                    MeterType = meterType,
                     Values = values
                 };
 
@@ -200,25 +221,25 @@ namespace Pra.MeterAdministration.Wpf
 
                 switch (reading.MeterType)
                 {
-                    case "AirQuality":
+                    case MeterType.AirQuality:
                         if (reading.Values.ContainsKey("txtCO2") && reading.Values.ContainsKey("txtPM25"))
                         {
                             displayText += $"CO2: {reading.Values["txtCO2"]} ppm, PM2.5: {reading.Values["txtPM25"]} µg/m³";
                         }
                         break;
-                    case "SolarPanel":
+                    case MeterType.SolarPanel:
                         if (reading.Values.ContainsKey("txtEnergyProduction"))
                         {
                             displayText += $"Energy Production: {reading.Values["txtEnergyProduction"]} kWh";
                         }
                         break;
-                    case "Electricity":
+                    case MeterType.Electricity:
                         if (reading.Values.ContainsKey("txtEnergyConsumption") && reading.Values.ContainsKey("cmbConsumptionType"))
                         {
                             displayText += $"{reading.Values["cmbConsumptionType"]} Usage: {reading.Values["txtEnergyConsumption"]} kWh";
                         }
                         break;
-                    case "Water":
+                    case MeterType.Water:
                         if (reading.Values.ContainsKey("txtWaterConsumption"))
                         {
                             displayText += $"Water Usage: {reading.Values["txtWaterConsumption"]} liters";
@@ -243,7 +264,7 @@ namespace Pra.MeterAdministration.Wpf
         }
         private bool IsTextNumeric(string text)
         {
-            return int.TryParse(text, out _);
+            return double.TryParse(text, out _);
         }
         private void AddComboBoxToUI(string labelText, string comboBoxName)
         {
@@ -269,7 +290,7 @@ namespace Pra.MeterAdministration.Wpf
                 {
                     txtMeterId.Text = selectedReading.MeterId.ToString();
                     dteDate.SelectedDate = selectedReading.Date;
-                    cmbMeterType.SelectedItem = Enum.Parse(typeof(MeterType), selectedReading.MeterType);
+                    cmbMeterType.SelectedItem = Enum.Parse(typeof(MeterType), selectedReading.MeterType.ToString());
 
                     CmbMeterType_SelectionChanged(null, null);
 
@@ -299,7 +320,8 @@ namespace Pra.MeterAdministration.Wpf
                 case Key.Escape:
                     lstMeterReadings.UnselectAll();
                     ClearInputFields();
-                    break;
+                    stpControls.Children.Clear();
+                    break; 
 
                 case Key.Delete:
 

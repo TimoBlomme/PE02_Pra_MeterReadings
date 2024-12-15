@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
+
 namespace Pra.MeterAdministration.Wpf.Classes
 {
     public class MeterAdmin
@@ -28,11 +29,6 @@ namespace Pra.MeterAdministration.Wpf.Classes
 
         public void AddMeterReading(MeterReading reading)
         {
-            if (meterReadings.Count > 4)
-            {
-                MessageBox.Show("you already have 5 Readings, you cannot add more readings", "Max amount of readings", MessageBoxButton.OK);
-                return;
-            }
             meterReadings.Add(reading);
         }
 
@@ -57,10 +53,9 @@ namespace Pra.MeterAdministration.Wpf.Classes
 
         public List<MeterReading> GetReadingsByType(string meterType)
         {
-            return meterReadings.Where(r => r.MeterType == meterType).ToList();
+            return meterReadings.Where(r => r.MeterType.ToString() == meterType).ToList();
         }
 
 
     }
 }
-

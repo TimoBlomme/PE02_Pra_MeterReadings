@@ -10,7 +10,7 @@ namespace Pra.MeterAdministration.Wpf.Classes
     {
         public int MeterId { get; set; }
         public DateTime Date { get; set; }
-        public string MeterType { get; set; }
+        public MeterType MeterType { get; set; }
         public Dictionary<string, string> Values { get; set; }
     }
 }

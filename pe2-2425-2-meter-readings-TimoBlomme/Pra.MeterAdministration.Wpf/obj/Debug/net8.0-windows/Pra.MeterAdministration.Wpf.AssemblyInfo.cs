@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Pra.MeterAdministration.Wpf")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+72b0a127bf360d451edfa36d0c3182d49300532b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bb6970773e3fde84f93eddd83257c88dfbcb5235")]
 [assembly: System.Reflection.AssemblyProductAttribute("Pra.MeterAdministration.Wpf")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Pra.MeterAdministration.Wpf")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
