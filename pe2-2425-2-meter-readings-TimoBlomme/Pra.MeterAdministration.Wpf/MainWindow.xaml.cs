@@ -93,6 +93,8 @@ namespace Pra.MeterAdministration.Wpf
 
         private void BtnAdd_Click(object sender, RoutedEventArgs e)
         {
+            
+
             try
             {
                 int meterId;
@@ -138,7 +140,12 @@ namespace Pra.MeterAdministration.Wpf
                         throw new Exception("A meter reading with this ID already exists.");
                     }
                 }
-                
+                 
+                if (cmbMeterType.SelectedItem == null)
+                {
+                    throw new Exception("Please select a meter type.");
+                }
+
                 MeterReading newReading = new MeterReading
                 {
                     MeterId = meterId,
@@ -182,7 +189,7 @@ namespace Pra.MeterAdministration.Wpf
             cmbMeterType.SelectedItem = null;
             stpControls.Children.Clear();
         }
-
+        
         private void RefreshMeterReadingsList()
         {
             lstMeterReadings.Items.Clear();
@@ -226,10 +233,18 @@ namespace Pra.MeterAdministration.Wpf
         {
             TextBlock textBlock = new TextBlock { Text = labelText, Margin = new Thickness(0, 0, 10, 0) };
             TextBox textBox = new TextBox { Name = textBoxName };
+            textBox.PreviewTextInput += NumericTextBox_PreviewTextInput;
             stpControls.Children.Add(textBlock);
             stpControls.Children.Add(textBox);
         }
-
+        private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !IsTextNumeric(e.Text);
+        }
+        private bool IsTextNumeric(string text)
+        {
+            return int.TryParse(text, out _);
+        }
         private void AddComboBoxToUI(string labelText, string comboBoxName)
         {
             TextBlock textBlock = new TextBlock { Text = labelText, Margin = new Thickness(0, 0, 10, 0) };
@@ -287,11 +302,21 @@ namespace Pra.MeterAdministration.Wpf
                     break;
 
                 case Key.Delete:
-                    meterAdmin.RemoveMeterReading(selectedReading);
-                    int count = meterAdmin.GetMetersCount();
-                    MessageBox.Show($"You have deleted 1 reading, you now have {count} readings", "Reading deleted", MessageBoxButton.OK);
-                    RefreshMeterReadingsList();
-                    ClearInputFields();
+
+                    MessageBoxResult result = MessageBox.Show("are you sure you wish to delete this reading?", "deleting", MessageBoxButton.OKCancel);
+
+                    if (result == MessageBoxResult.OK)
+                    {
+                        meterAdmin.RemoveMeterReading(selectedReading);
+                        int count = meterAdmin.GetMetersCount();
+                        MessageBox.Show($"You have deleted 1 reading, you now have {count} readings", "Reading deleted", MessageBoxButton.OK);
+                        RefreshMeterReadingsList();
+                        ClearInputFields();
+                    }
+                    else if (result == MessageBoxResult.Cancel)
+                    {
+                        break;
+                    }
                     break;
             }
         }
