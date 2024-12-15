@@ -37,12 +37,40 @@ namespace Pra.MeterAdministration.Wpf.Classes
             meterReadings.Remove(reading);
         }
 
-        public void UpdateMeterReading(int meterId, Dictionary<string, string> updatedValues, DateTime updatedDate)
+        public void UpdateMeterReading(int meterId, int value, DateTime updatedDate, int value2 = 0, ConsumptionType consumptionType = ConsumptionType.OFFPEAKLOAD)
         {
+
+            Water waterReading;
+            Solar solarReading;
+            Electricity electricityReading;
+            AirQuality airQualityReading;
+
             MeterReading reading = meterReadings.FirstOrDefault(r => r.MeterId == meterId);
+            
+
             if (reading != null)
             {
-                reading.Values = updatedValues;
+                switch (reading.MeterType)
+                {
+                    case MeterType.Water:
+                        waterReading = (Water)reading;
+                        waterReading.Liters = value;
+                        break;
+                    case MeterType.Electricity:
+                        electricityReading = (Electricity)reading;
+                        electricityReading.Energy = value;
+                        electricityReading.ConsumptionType = consumptionType;
+                        break;
+                    case MeterType.SolarPanel:
+                        solarReading = (Solar)reading;
+                        solarReading.Energy = value;
+                        break;
+                    case MeterType.AirQuality:
+                        airQualityReading = (AirQuality)reading;
+                        airQualityReading.CO2 = value;
+                        airQualityReading.PM25 = value2;
+                        break;
+                }
                 reading.Date = updatedDate;
             }
             else

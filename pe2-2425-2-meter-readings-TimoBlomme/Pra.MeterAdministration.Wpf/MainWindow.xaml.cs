@@ -41,30 +41,17 @@ namespace Pra.MeterAdministration.Wpf
 
         private void InitializeSeedData()
         {
-            
 
-            MeterReading airQualityReading = new MeterReading
-            {
-                MeterId = 1,
-                Date = DateTime.Now,
-                MeterType = MeterType.AirQuality,
-                Values = new Dictionary<string, string>
-                {
-                    { "txtCO2", "400" },
-                    { "txtPM25", "10" }
-                }
-            };
 
-            MeterReading waterReading = new MeterReading
-            {
-                MeterId = 2,
-                Date = DateTime.Now,
-                MeterType = MeterType.Water,
-                Values = new Dictionary<string, string>
-                {
-                    { "txtWaterConsumption", "150" }
-                }
-            };
+            MeterReading airQualityReading = new AirQuality
+            (
+                1, MeterType.AirQuality, DateTime.Now, 20, 20
+            );
+
+            MeterReading waterReading = new Water
+            (
+                2, MeterType.Water, DateTime.Now, 200
+            );
 
             meterAdmin.AddMeterReading(airQualityReading);
             meterAdmin.AddMeterReading(waterReading);
@@ -109,6 +96,11 @@ namespace Pra.MeterAdministration.Wpf
                     throw new Exception("Maximum of 5 meter readings reached.");
                 }
 
+                if (cmbMeterType.SelectedItem == null)
+                {
+                    throw new Exception("you have not selected a meterType");
+                }
+
                 MeterType meterType = (MeterType)cmbMeterType.SelectedItem;
                 int meterId;
 
@@ -121,10 +113,11 @@ namespace Pra.MeterAdministration.Wpf
                     throw new Exception("Select a valid date.");
                 }
 
-                Dictionary<string, string> values = new Dictionary<string, string>();
+                List<int> value = new();
+                ConsumptionType consumptionType = ConsumptionType.OFFPEAKLOAD;
                 foreach (TextBox child in stpControls.Children.OfType<TextBox>())
                 {
-                    values[child.Name] = child.Text;
+                    value.Add(int.Parse(child.Text)); 
                     if (string.IsNullOrWhiteSpace(child.Text))
                     {
                         throw new Exception($"Invalid input for {child.Name}.");
@@ -133,7 +126,7 @@ namespace Pra.MeterAdministration.Wpf
 
                 foreach (ComboBox comboBox in stpControls.Children.OfType<ComboBox>())
                 {
-                    values[comboBox.Name] = comboBox.SelectedItem?.ToString();
+                    consumptionType = (ConsumptionType)comboBox.SelectedItem;
                     if (comboBox.SelectedItem == null)
                     {
                         throw new Exception($"Please select a valid option for {comboBox.Name}.");
@@ -166,21 +159,46 @@ namespace Pra.MeterAdministration.Wpf
                 {
                     throw new Exception("Please select a meter type.");
                 }
+                MeterReading newReading;
 
-                MeterReading newReading = new MeterReading
+                switch (meterType)
                 {
-                    MeterId = meterId,
-                    Date = dteDate.SelectedDate.Value,
-                    MeterType = meterType,
-                    Values = values
-                };
-
+                    case MeterType.Water:
+                        newReading = new Water
+                            (
+                                meterId, meterType, dteDate.SelectedDate.Value, value[0]
+                            );
+                        break;
+                    case MeterType.AirQuality:
+                        newReading = new AirQuality
+                            (
+                                meterId, meterType, dteDate.SelectedDate.Value, value[0], value[1]
+                            );
+                        break;
+                    case MeterType.Electricity:
+                        newReading = new Electricity
+                            (
+                                meterId, meterType, dteDate.SelectedDate.Value, value[0], consumptionType
+                            );
+                        break;
+                    case MeterType.SolarPanel:
+                        newReading = new Solar
+                            (
+                                meterId, meterType, dteDate.SelectedDate.Value, value[0]
+                            );
+                        break;
+                    default:
+                        throw new Exception("error");
+                        break;
+                }
                 meterAdmin.AddMeterReading(newReading);
+
+
 
                 if (selectedReading == null)
                 {
                     int count = meterAdmin.GetMetersCount();
-                    if (count < 5)
+                    if (count <= 5)
                     {
                         MessageBox.Show($"You have added a reading, you now have {count} readings", "Reading added", MessageBoxButton.OK);
                     }
@@ -209,6 +227,8 @@ namespace Pra.MeterAdministration.Wpf
             dteDate.SelectedDate = null;
             cmbMeterType.SelectedItem = null;
             stpControls.Children.Clear();
+            lstMeterReadings.SelectedIndex = -1;
+            selectedReading = null;
         }
         
         private void RefreshMeterReadingsList()
@@ -222,28 +242,20 @@ namespace Pra.MeterAdministration.Wpf
                 switch (reading.MeterType)
                 {
                     case MeterType.AirQuality:
-                        if (reading.Values.ContainsKey("txtCO2") && reading.Values.ContainsKey("txtPM25"))
-                        {
-                            displayText += $"CO2: {reading.Values["txtCO2"]} ppm, PM2.5: {reading.Values["txtPM25"]} µg/m³";
-                        }
+                        AirQuality airQuality = (AirQuality)reading;
+                        displayText += $"CO2: {airQuality.CO2} ppm, PM2.5: {airQuality.PM25} µg/m³";
                         break;
                     case MeterType.SolarPanel:
-                        if (reading.Values.ContainsKey("txtEnergyProduction"))
-                        {
-                            displayText += $"Energy Production: {reading.Values["txtEnergyProduction"]} kWh";
-                        }
+                        Solar solar = (Solar)reading;
+                        displayText += $"Energy Production: {solar.Energy} kWh";
                         break;
                     case MeterType.Electricity:
-                        if (reading.Values.ContainsKey("txtEnergyConsumption") && reading.Values.ContainsKey("cmbConsumptionType"))
-                        {
-                            displayText += $"{reading.Values["cmbConsumptionType"]} Usage: {reading.Values["txtEnergyConsumption"]} kWh";
-                        }
+                        Electricity electricity = (Electricity)reading;
+                        displayText += $"{electricity.ConsumptionType} Usage: {electricity.Energy} kWh";
                         break;
                     case MeterType.Water:
-                        if (reading.Values.ContainsKey("txtWaterConsumption"))
-                        {
-                            displayText += $"Water Usage: {reading.Values["txtWaterConsumption"]} liters";
-                        }
+                        Water water = (Water)reading;
+                        displayText += $"Water Usage: {water.Liters} liters";
                         break;
                 }
                 lstMeterReadings.Items.Add(displayText);
@@ -272,7 +284,7 @@ namespace Pra.MeterAdministration.Wpf
             ComboBox comboBox = new ComboBox
             {
                 Name = comboBoxName,
-                ItemsSource = new[] { "Peakload", "Offload" }
+                ItemsSource = new[] { ConsumptionType.PEAKLOAD, ConsumptionType.OFFPEAKLOAD }
             };
             stpControls.Children.Add(textBlock);
             stpControls.Children.Add(comboBox);
@@ -283,8 +295,7 @@ namespace Pra.MeterAdministration.Wpf
             if (lstMeterReadings.SelectedItem != null)
             {
                 string selectedDisplay = lstMeterReadings.SelectedItem.ToString();
-                selectedReading = meterAdmin.MeterReadings
-                    .FirstOrDefault(r => selectedDisplay.Contains($"Meter ID: {r.MeterId}"));
+                selectedReading = meterAdmin.MeterReadings.FirstOrDefault(r => selectedDisplay.Contains($"Meter ID: {r.MeterId}"));
 
                 if (selectedReading != null)
                 {
@@ -294,21 +305,60 @@ namespace Pra.MeterAdministration.Wpf
 
                     CmbMeterType_SelectionChanged(null, null);
 
-                    foreach (var control in stpControls.Children.OfType<TextBox>())
+                    Water waterReading;
+                    Electricity electricityReading;
+                    Solar solarReading;
+                    AirQuality airQualityReading;
+
+                    switch (selectedReading.MeterType)
                     {
-                        if (selectedReading.Values.TryGetValue(control.Name, out string value))
-                        {
-                            control.Text = value;
-                        }
+                        case MeterType.Water:
+                            waterReading = (Water)selectedReading;
+                            foreach (TextBox control in stpControls.Children.OfType<TextBox>())
+                            {
+                                control.Text = waterReading.Liters.ToString();
+                            }
+                            break;
+                        case MeterType.Electricity:
+                            electricityReading = (Electricity)selectedReading;
+                            foreach (TextBox control in stpControls.Children.OfType<TextBox>())
+                            {
+                                control.Text = electricityReading.Energy.ToString();
+                            }
+                            foreach (ComboBox control in stpControls.Children.OfType<ComboBox>())
+                            {
+                                    control.SelectedItem = electricityReading.ConsumptionType;
+                            }
+                            break;
+                        case MeterType.SolarPanel:
+                            solarReading = (Solar)selectedReading;
+                            foreach (TextBox control in stpControls.Children.OfType<TextBox>())
+                            {
+                                control.Text = solarReading.Energy.ToString();
+                            }
+                            break;
+                        case MeterType.AirQuality:
+                            airQualityReading = (AirQuality)selectedReading;
+                            int index = 0;
+                            foreach (TextBox control in stpControls.Children.OfType<TextBox>())
+                            {
+                                if (index == 0)
+                                {
+                                    control.Text = airQualityReading.CO2.ToString();
+                                }
+                                if (index == 1)
+                                {
+                                    control.Text = airQualityReading.PM25.ToString();
+                                }
+                                index++;
+                            }
+                            break;
                     }
 
-                    foreach (var control in stpControls.Children.OfType<ComboBox>())
-                    {
-                        if (selectedReading.Values.TryGetValue(control.Name, out string value))
-                        {
-                            control.SelectedItem = value;
-                        }
-                    }
+
+
+
+                    
                 }
             }
         }
@@ -330,10 +380,13 @@ namespace Pra.MeterAdministration.Wpf
                     if (result == MessageBoxResult.OK)
                     {
                         meterAdmin.RemoveMeterReading(selectedReading);
+                        
                         int count = meterAdmin.GetMetersCount();
                         MessageBox.Show($"You have deleted 1 reading, you now have {count} readings", "Reading deleted", MessageBoxButton.OK);
                         RefreshMeterReadingsList();
+                        
                         ClearInputFields();
+                        
                     }
                     else if (result == MessageBoxResult.Cancel)
                     {
